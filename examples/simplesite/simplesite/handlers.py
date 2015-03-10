@@ -1,18 +1,16 @@
 import pprint
 import logging
-import colander
 
+import colander
 from pyramid_handlers import action
-from pyramid.url import route_url
 from pyramid.httpexceptions import HTTPFound
-from pyramid_simpleform.form import Form
+from pyramid_simpleform import Form
 from pyramid_simpleform.renderers import FormRenderer
 
 from simplesite.models import MyModel, Session
 
+
 class MyModelSchema(colander.MappingSchema):
-
-
     name = colander.SchemaNode(
         colander.String(),
         validator=colander.Length(min=5)
@@ -24,7 +22,6 @@ class MyModelSchema(colander.MappingSchema):
 
 
 class NestedSchema(colander.MappingSchema):
-
     number = colander.SchemaNode(
         colander.Int()
     )
@@ -34,12 +31,14 @@ class NestedSchema(colander.MappingSchema):
 
 log = logging.getLogger(__name__)
 
+
 class MainHandler(object):
     def __init__(self, request):
         self.request = request
 
     @action(renderer='index.html')
     def index(self):
+        # import pdb; pdb.set_trace()
         items = Session().query(MyModel).all()
         return dict(items=items)
 
@@ -54,22 +53,20 @@ class MainHandler(object):
         form = Form(self.request, schema=MyModelSchema(), obj=item)
 
         if form.validate():
-            
             form.bind(item)
             session.merge(item)
             session.flush()
-            
+
             return HTTPFound(location="/")
 
         return dict(item=item, form=FormRenderer(form))
 
     @action(renderer='submit.html')
     def submit(self):
-        
+
         form = Form(self.request, schema=MyModelSchema())
 
         if form.validate():
-
             obj = form.bind(MyModel())
 
             session = Session()
@@ -86,7 +83,6 @@ class MainHandler(object):
         form = Form(self.request, schema=NestedSchema())
 
         if form.validate():
-
-            print pprint.pprint(form.data)
+            print(pprint.pprint(form.data))
 
         return dict(form=FormRenderer(form))

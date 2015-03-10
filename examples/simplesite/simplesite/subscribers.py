@@ -4,6 +4,7 @@ from pyramid.url import route_url
 
 import simplesite.helpers as helpers
 
+
 def add_renderer_globals(event):
     """ A subscriber to the ``pyramid.events.BeforeRender`` events.  Updates
     the :term:`renderer globals` with values that are familiar to Pylons
@@ -14,7 +15,7 @@ def add_renderer_globals(event):
     globs = {
         'url': route_url,
         'h': helpers,
-        }
+    }
     if request is not None:
         tmpl_context = request.tmpl_context
         globs['c'] = tmpl_context

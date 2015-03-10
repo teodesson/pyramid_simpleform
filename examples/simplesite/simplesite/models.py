@@ -2,8 +2,6 @@ import logging
 
 import pyramid_sqla as psa
 import sqlalchemy as sa
-import sqlalchemy.orm as orm
-import transaction
 
 log = logging.getLogger(__name__)
 
@@ -20,6 +18,5 @@ class MyModel(Base):
 
 
 def initialize_sql(engine):
-
     Base.metadata.bind = engine
     Base.metadata.create_all()

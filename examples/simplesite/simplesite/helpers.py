@@ -12,5 +12,5 @@ The template globals (``h`` et al) are set in
 ``{{package}}.subscribers.add_renderer_globals()``.
 """
 
-#from webhelpers.html import *
-#from webhelpers.html.tags import *
+# from webhelpers.html import *
+# from webhelpers.html.tags import *

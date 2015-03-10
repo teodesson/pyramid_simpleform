@@ -12,6 +12,7 @@ import transaction
 
 import simplesite.models as models
 
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("Usage: python -m simplesite.scripts.create_db INI_FILE")
@@ -19,7 +20,7 @@ def main():
     logging.config.fileConfig(ini_file)
     log = logging.getLogger(__name__)
     app = get_app(ini_file, "SimpleDemo")
-    #settings = app.registry.settings
+    # settings = app.registry.settings
 
     # Abort if any tables exist to prevent accidental overwriting
     for table in models.Base.metadata.sorted_tables:
@@ -32,12 +33,11 @@ def main():
     sess = models.Session()
 
     # Record 1
-    #p = models.MyModel(id=1, name=u"Foo Bar")
+    # p = models.MyModel(id=1, name=u"Foo Bar")
     #sess.add(p)
 
     transaction.commit()
 
-    
 
-if __name__ == "__main__":  
+if __name__ == "__main__":
     main()
