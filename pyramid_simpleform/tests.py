@@ -1,5 +1,6 @@
 import unittest
 
+import formencode
 from formencode import Schema
 from formencode import validators
 
@@ -10,6 +11,7 @@ from pyramid.config import Configurator
 class SimpleFESchema(Schema):
 
     name = validators.NotEmpty()
+    names = formencode.ForEach()
 
 
 class SimpleObj(object):
@@ -211,6 +213,29 @@ class TestFormencodeForm(unittest.TestCase):
 
         self.assert_(form.errors_for('name') == ['Please enter a value'])
 
+    def test_foreach_with_validators_and_multidict(self):
+        from formencode import ForEach
+        from pyramid_simpleform import Form
+        from webob.multidict import MultiDict
+
+        request = testing.DummyRequest()
+        request.method = "POST"
+        request.POST = MultiDict([
+            ("name", "1"),
+            ("name", "2"),
+            ("name", "3"),
+        ])
+
+        form = Form(request,
+                    validators=dict(name=ForEach(validators.NotEmpty())))
+        self.assert_(form.validate())
+        if hasattr(self, 'assertListEqual'):
+            assertfn = self.assertListEqual
+        else:
+            assertfn = self.assertEqual
+
+        assertfn(form.data["name"], ["1", "2", "3"])
+
     def test_is_validated_on_post(self):
         from pyramid_simpleform import Form
 
@@ -341,13 +366,32 @@ class TestFormencodeForm(unittest.TestCase):
 
         request = testing.DummyRequest()
         request.POST['name'] = 'test'
+        request.POST['names-1'] = 'test1'
+        request.POST['names-2'] = 'test2'
         request.method = "POST"
-        
+
         form = Form(request, SimpleFESchema,
                     variable_decode=True)
 
-        self.assert_(form.validate())
-        self.assert_(form.data['name'] == 'test')
+        self.assertTrue(form.validate())
+        self.assertEquals(form.data['name'], 'test')
+        self.assertEquals(form.data['names'], ['test1', 'test2'])
+
+    def test_variable_decode_with_error(self):
+        from pyramid_simpleform import Form
+
+        request = testing.DummyRequest()
+        request.POST['name'] = ''
+        request.POST['names-1'] = 'test1'
+        request.POST['names-2'] = 'test2'
+        request.method = "POST"
+
+        form = Form(request, SimpleFESchema,
+                    variable_decode=True)
+
+        self.assertFalse(form.validate())
+        self.assertEquals(form.data['name'], '')
+        self.assertEquals(form.data['names'], ['test1', 'test2'])
 
     def test_validate_from_GET(self):
         from pyramid_simpleform import Form
@@ -396,7 +440,8 @@ class TestFormencodeForm(unittest.TestCase):
         settings = {}
 
         settings['mako.directories'] = 'pyramid_simpleform:templates'
-        config = Configurator(settings=settings)
+        config = testing.setUp(settings=settings)
+        config.include('pyramid_mako')
 
 
         request.registry = config.registry
@@ -419,7 +464,8 @@ class TestFormencodeForm(unittest.TestCase):
         settings = {}
 
         settings['mako.directories'] = 'pyramid_simpleform:templates'
-        config = Configurator(settings=settings)
+        config = testing.setUp(settings=settings)
+        config.include('pyramid_mako')
 
 
         request.registry = config.registry
@@ -533,6 +579,19 @@ class TestFormencodeFormRenderer(unittest.TestCase):
         self.assert_(renderer.text("name") == \
                 '<input id="name" name="name" type="text" value="Fred" />')
 
+    def test_date(self):
+        from pyramid_simpleform import Form
+        from pyramid_simpleform.renderers import FormRenderer
+        import datetime
+
+        request = testing.DummyRequest()
+        form = Form(request, SimpleFESchema, defaults={
+            "when" : datetime.date(2014, 02, 01) })
+        renderer = FormRenderer(form)
+
+        self.assert_(renderer.date("when", date_format="%d/%m/%Y") == \
+                '<input id="when" name="when" type="text" value="01/02/2014" />')
+
     def test_textarea(self):
         from pyramid_simpleform import Form
         from pyramid_simpleform.renderers import FormRenderer
@@ -639,9 +698,52 @@ class TestFormencodeFormRenderer(unittest.TestCase):
         request = testing.DummyRequest()
         form = Form(request, SimpleFESchema, defaults={"name" : True})
         renderer = FormRenderer(form)
-        
+
         self.assert_(renderer.checkbox("name") == \
             '<input checked="checked" id="name" name="name" type="checkbox" '
+            'value="1" />')
+
+    def test_checkbox_checked(self):
+        from pyramid_simpleform import Form
+        from pyramid_simpleform.renderers import FormRenderer
+
+        request = testing.DummyRequest()
+        form = Form(request, SimpleFESchema)
+        renderer = FormRenderer(form)
+
+        self.assert_(renderer.checkbox("name") == \
+            '<input id="name" name="name" type="checkbox" '
+            'value="1" />')
+
+        self.assert_(renderer.checkbox("name", checked=True) == \
+            '<input checked="checked" id="name" name="name" type="checkbox" '
+            'value="1" />')
+
+    def test_checkbox_checked_with_default(self):
+        from pyramid_simpleform import Form
+        from pyramid_simpleform.renderers import FormRenderer
+
+        request = testing.DummyRequest()
+        form = Form(request, SimpleFESchema, defaults={"name" : True})
+        renderer = FormRenderer(form)
+
+        self.assert_(renderer.checkbox("name", checked=False) == \
+            '<input checked="checked" id="name" name="name" type="checkbox" '
+            'value="1" />')
+
+        self.assert_(renderer.checkbox("name", checked=True) == \
+            '<input checked="checked" id="name" name="name" type="checkbox" '
+            'value="1" />')
+
+        form = Form(request, SimpleFESchema, defaults={"name" : False})
+        renderer = FormRenderer(form)
+
+        self.assert_(renderer.checkbox("name", checked=False) == \
+            '<input id="name" name="name" type="checkbox" '
+            'value="1" />')
+
+        self.assert_(renderer.checkbox("name", checked=True) == \
+            '<input id="name" name="name" type="checkbox" '
             'value="1" />')
 
     def test_is_error(self):

@@ -1,6 +1,6 @@
-
-from webhelpers2.html import tags
-from webhelpers2.html.builder import HTML
+import datetime
+from webhelpers.html import tags
+from webhelpers.html.builder import HTML
 
 
 class Renderer(object):
@@ -32,6 +32,21 @@ class Renderer(object):
             name, 
             self.value(name, value), 
             self._get_id(id, name), 
+            **attrs
+        )
+
+    def date(self, name, value=None, id=None, date_format=None, **attrs):
+        """
+        Outputs text input with an optionally formatted datetime.
+        """
+        value = self.value(name, value)
+        if isinstance(value, datetime.date) and date_format:
+            value = value.strftime(date_format)
+
+        return tags.text(
+            name,
+            value,
+            self._get_id(id, name),
             **attrs
         )
 
@@ -99,7 +114,7 @@ class Renderer(object):
         return tags.checkbox(
             name, 
             value, 
-            self.value(name), 
+            self.value(name, checked), 
             label, 
             self._get_id(id, name), 
             **attrs

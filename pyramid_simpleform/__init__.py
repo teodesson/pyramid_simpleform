@@ -202,7 +202,7 @@ class Form(object):
         else:
             decoded = params
 
-        self.data.update(params)
+        self.data.update(decoded)
 
         if self.schema:
             try:
